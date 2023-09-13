@@ -1,0 +1,48 @@
+stages:
+  - additional_features
+  - scheduling
+  - configure
+  - deploy
+
+variables:
+#Which environment would you like to deploy?
+  TEST_CLUSTER_DEPLOY: disabled
+  STAGE_CLUSTER_DEPLOY: disabled
+  PROD_CLUSTER_DEPLOY: enabled
+#####################################
+#Common Envs (each cluster has it's own set of envs, wich all are gonna be merged here. Environments envs have lower priority).
+  GIT_SUBMODULE_STRATEGY: recursive
+  REGISTRY: gcr.io/${PROD_GCP_PROJECT_ID}
+  HELM3_IMAGE: ${REGISTRY}/[path to your custom HELM image]
+  DOCKER_DRIVER: overlay2
+  GITLAB_HOST_DOMAIN: [put your gitlab host name here like gitlab.yourdomain.com]
+
+######################################################################################################################################################
+#.before_script_template: &default_test
+#  before_script:
+#    - export PATH=$PATH:/root/google-cloud-sdk/bin
+######################################################################################################################################################
+Scheduling:
+  stage: scheduling
+  image: ${HELM_IMAGE}
+  variables:
+    GIT_STRATEGY: none
+  retry: 2
+  script:
+    - |
+      printf 'Waiting...'
+      while true; do
+        READY=$(curl -sS -k  --header "PRIVATE-TOKEN: $(cat /gitlab-api/key)" "https://${GITLAB_HOST_DOMAIN}/api/v4/projects/${CI_PROJECT_ID}/pipelines?order_by=id&sort=asc&scope=running" | jq '.[0].id=='"${CI_PIPELINE_ID}")
+        if [ "${READY}" = "true" ]; then
+          printf '\nReady!'
+          exit 0
+        else
+          printf '.'
+          sleep 20
+        fi
+      done
+#######################################################################################################################################################
+include:
+#  - local: '/test/.gitlab-ci.yml'
+  - local: '/stage/.gitlab-ci.yml'
+  - local: '/production/.gitlab-ci.yml'

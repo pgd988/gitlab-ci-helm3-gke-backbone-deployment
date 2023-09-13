@@ -1,0 +1,4 @@
+#dependencies:
+#- name: fluentd
+#  repository: ./charts/fluentd
+#  condition: fluentd.enabled

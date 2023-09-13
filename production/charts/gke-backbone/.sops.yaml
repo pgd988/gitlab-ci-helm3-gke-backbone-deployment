@@ -1,0 +1,7 @@
+creation_rules:
+  # Encrypt using GCP KMS
+  - gcp_kms: projects/[put your project here]/locations/global/keyRings/[put your's keyring name here]/cryptoKeys/[put your's key name here]
+
+
+
+

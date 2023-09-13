@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: example-svc
+  namespace: {{ .Values.namespace }}
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+    cloud.google.com/neg: '{"exposed_ports":{"8088":{}}}'
+  labels:
+    app: {{ template "ui.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  ports:
+  - name: example-svc
+    port: 8088
+    protocol: TCP
+    targetPort: 8088
+  selector:
+    example_svc_selector: prod
+  sessionAffinity: None
+  type: ClusterIP

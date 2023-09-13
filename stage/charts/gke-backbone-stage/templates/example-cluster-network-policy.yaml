@@ -1,0 +1,85 @@
+{{- if .Values.cluster_network_policy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-network-policy
+  namespace: {{ .Values.namespace }}
+spec:
+  policyTypes:
+  - Ingress
+  - Egress
+  podSelector: {}
+  ingress:
+  - from:
+      - namespaceSelector:
+          matchLabels:
+            namespace: default
+        podSelector:
+          matchLabels:
+            nginx_service_lb_status: prod
+      - namespaceSelector:
+          matchLabels:
+            namespace: {{ .Values.namespace }}
+      - namespaceSelector:
+          matchLabels:
+            namespace: kube-system
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 104.154.50.117/32
+      ports:
+        - port: 3307
+          protocol: TCP
+    - to:
+        - ipBlock:
+            cidr: 35.184.238.222/32
+      ports:
+        - port: 3307
+          protocol: TCP
+    - to:
+        - ipBlock:
+            cidr: 10.128.0.47/32
+      ports:
+        - port: 27017
+          protocol: TCP
+    - to:
+        - ipBlock:
+            cidr: 10.128.0.28/32
+      ports:
+        - port: 27017
+          protocol: TCP
+    - to:
+        - ipBlock:
+            cidr: 10.128.0.68/32
+      ports:
+        - port: 27017
+          protocol: TCP
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              namespace: default
+          podSelector:
+            matchLabels:
+              app: rabbit-example-production
+      ports:
+        - port: 5672
+          protocol: TCP
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              namespace: default
+          podSelector:
+            matchLabels:
+              app: redis-example-production
+      ports:
+        - port: 6379
+          protocol: TCP
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              namespace: {{ .Values.namespace }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              namespace: kube-system
+{{ end }}

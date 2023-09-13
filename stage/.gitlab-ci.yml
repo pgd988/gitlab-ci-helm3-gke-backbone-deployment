@@ -1,0 +1,64 @@
+stages:
+  - additional_features
+  - scheduling
+  - configure
+  - deploy
+
+variables:
+  PROD_GCP_PROJECT_ID: [your_gcp_project]
+  GIT_SUBMODULE_STRATEGY: recursive
+  REGISTRY: gcr.io/${PROD_GCP_PROJECT_ID}
+  HELM3_IMAGE: ${REGISTRY}/[path to your custom HELM image]
+  DOCKER_DRIVER: overlay2
+  PROD_CLUSTER_NAME: your GKE cluster name
+  PROD_CLUSTER_ZONE: your GKE cluster zone
+  NAMESPACE: [put your namespace here]
+  PROD_CHART_NAME: gke-backbone-stage
+  PROD_CHART_PATH: ./production/charts/${PROD_CHART_NAME}
+#######################################################################################################################################################
+#########################################################################################################################################################
+########################################################################################################################################################
+
+Deploy_PROD_SERVICE_ACCOUNTS:
+  stage: configure
+  image: ${HELM3_IMAGE}
+  script:
+    - gcloud auth activate-service-account --key-file=/gke-keys/key.json
+    - gcloud container clusters get-credentials ${PROD_CLUSTER_NAME} --zone ${PROD_CLUSTER_ZONE} --project ${PROD_GCP_PROJECT_ID}
+  rules:
+    - if: '$PROD_CLUSTER_DEPLOY == "enabled" && $CI_COMMIT_REF_NAME == "master_disabled"'
+      when: always
+    - when: never
+
+########################################################################################################################################################
+
+Deploy_PROD_NAMESPACES:
+  stage: configure
+  image: ${HELM3_IMAGE}
+  script:
+    - gcloud auth activate-service-account --key-file=/gke-keys/key.json
+    - gcloud container clusters get-credentials ${PROD_CLUSTER_NAME} --zone ${PROD_CLUSTER_ZONE} --project ${PROD_GCP_PROJECT_ID}
+    - kubectl create -f ./production/namespaces/namespace.yaml
+  allow_failure: true
+  rules:
+    - if: '$PROD_CLUSTER_DEPLOY == "enabled" && $CI_COMMIT_REF_NAME == "master"'
+      when: always
+    - when: never
+
+#########################################################################################################################################################
+
+Deploy_GKE_BACKBONE:
+  stage: deploy
+  image: ${HELM3_IMAGE}
+  script:
+    - gcloud auth activate-service-account --key-file=/gke-keys/key.json
+    - gcloud container clusters get-credentials ${PROD_CLUSTER_NAME} --zone ${PROD_CLUSTER_ZONE} --project ${PROD_GCP_PROJECT_ID}
+    - export GOOGLE_APPLICATION_CREDENTIALS="/gke-keys/key.json"; helm secrets upgrade --install ${PROD_CHART_NAME} ${PROD_CHART_PATH} -f ${PROD_CHART_PATH}/values.yaml -f ${PROD_CHART_PATH}/secrets.yaml
+      --timeout 900s
+      --namespace=${NAMESPACE}
+      --debug
+  rules:
+    - if: '$PROD_CLUSTER_DEPLOY == "enabled" && $CI_COMMIT_REF_NAME == "master"'
+      when: always
+    - when: never
+#############################################################################################################################################################

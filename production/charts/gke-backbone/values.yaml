@@ -1,0 +1,5 @@
+cluster_network_policy:
+  enabled: false
+  default_allow:
+    enabled: false
+namespace: default [put your own namespace here instead of "default" if you need it]

@@ -1,0 +1,8 @@
+apiVersion: v1
+description: Defailt backbone entities of the cluster for our project such as svc, secrets, configmaps, ingresses and so on.
+name: gke-backbone
+version: 0.0.1
+maintainers:
+- name: pgd988
+  email: pgd988@gmail.com
+
